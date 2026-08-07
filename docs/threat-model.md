@@ -60,18 +60,24 @@ Read-only scopes are what actually bound the damage.
 
 Mitigations: `mcp.json` is URL-only by design and documented as such; CI fails on credential
 patterns in `mcp.json`, `plugin.json`, and skills; GitHub secret scanning with push
-protection; the release archive is built from a path allowlist; CODEOWNERS review on MCP
-config.
+protection is enabled; the release archive is built from a path allowlist.
+
+Residual: `CODEOWNERS` assigns reviewers for MCP configuration but approval is not enforced —
+required approvals are zero while the maintainer team has one member. The automated checks
+above are the real control here; human review is currently advisory. See `CONTRIBUTING.md`.
 
 ### T3 — Supply chain compromise of a release
 
 **Risk: high impact, low likelihood.**
 
-Mitigations: releases only from protected tags; manifest version must equal the tag;
-third-party Actions pinned to commit SHAs; SHA-256 checksums published; no publishing from
-fork or pull-request contexts; revocation procedure in `SECURITY.md`.
+Mitigations: releases publish only from tags on this repository; the manifest version must
+equal the tag; Actions are pinned to commit SHAs; SHA-256 checksums are published; no
+publishing from fork or pull-request contexts; `main` forbids force pushes and deletions;
+revocation procedure in `SECURITY.md`.
 
-Residual: no signed attestations yet — [open decision #7](../README.md#open-decisions).
+Residual: no signed attestations yet — [open decision #7](../README.md#open-decisions). Tags
+themselves are not protected, so a maintainer could move one; releases are immutable once
+published, and checksums are the artifact-level guarantee.
 
 ### T4 — Over-broad scope grant
 
