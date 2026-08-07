@@ -104,13 +104,14 @@ Revoke the client's grant in your Usable account settings, then remove the store
 credentials from the client (see the client's own credential management). Revocation is
 immediate for new requests; already-issued access tokens remain valid until they expire.
 
-## Known deviation
+## Both metadata URLs work
 
-The path-suffixed protected-resource URL from RFC 9728 §3.1,
-`https://usable.dev/.well-known/oauth-protected-resource/api/mcp`, currently returns the
-site's HTML rather than JSON or a 404. Clients that construct that URL by convention instead
-of following the `resource_metadata` parameter in the `WWW-Authenticate` header will fail
-discovery.
+Either discovery strategy reaches the same document. Reading the `resource_metadata`
+parameter out of the `WWW-Authenticate` challenge gives
+`https://usable.dev/.well-known/oauth-protected-resource`; constructing the URL by the
+RFC 9728 §3.1 rule — inserting `/.well-known/oauth-protected-resource` between host and
+resource path — gives `https://usable.dev/.well-known/oauth-protected-resource/api/mcp`.
+Both return the same JSON.
 
-Clients that follow the header — which is what the specification requires — work correctly.
-This is recorded in `docs/supported-clients.md` and has been reported upstream.
+The path-suffixed URL previously served the site's HTML, which broke discovery for clients
+that prefer the RFC construction over the challenge header. Fixed server-side on 2026-08-07.
