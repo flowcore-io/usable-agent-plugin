@@ -76,16 +76,24 @@ useful than an optimistic ⏳.
 
 1. Branch from `main`.
 2. Run `node scripts/validate-package.mjs` and make it pass.
-3. Add a `CHANGELOG.md` entry under `## Unreleased`.
+3. Add a `CHANGELOG.md` entry under `## Unreleased`, creating that section above the newest
+   released version if it does not exist.
 4. Use [Conventional Commits](https://www.conventionalcommits.org/) — `feat:`, `fix:`,
    `docs:`, `chore:`, `ci:`.
 5. Describe the behavior change, not just the diff.
 
 CI blocks: invalid manifests, invalid skill frontmatter, unsafe paths or symlinks, credential
-patterns, broken links, and release-archive drift.
+patterns, broken links, and release-archive drift. `main` requires a pull request, requires
+those checks to pass, and forbids force pushes and deletions.
 
-Skill, `mcp.json`, release workflow, and security documentation changes require CODEOWNERS
-review.
+`CODEOWNERS` assigns reviewers for skills, `plugin.json`, `mcp.json`, release workflows, and
+security documentation. **Their approval is not currently enforced.** Required approvals are
+set to zero because `@flowcore-io/usable-maintainers` has a single member, and requiring
+code-owner approval on a one-person team would make the repository unmergeable. Reviewer
+assignment is therefore advisory today.
+
+This is a known gap, not a design choice. When a second maintainer joins, raise required
+approvals to at least one and enable code-owner reviews.
 
 ## Versioning
 
