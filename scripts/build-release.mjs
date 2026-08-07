@@ -46,9 +46,12 @@ if (!version) {
   process.exit(1);
 }
 
-// Tag/manifest agreement — required by the release workflow.
+// Tag/manifest agreement, enforced only when building from a tag. On branch
+// pushes GITHUB_REF_NAME is the branch (e.g. "main"), which is not a version
+// and must not be compared against the manifest.
+const isTagBuild = process.env.GITHUB_REF_TYPE === "tag";
 const tag = process.env.GITHUB_REF_NAME;
-if (tag) {
+if (isTagBuild && tag) {
   const expected = tag.replace(/^v/, "");
   if (expected !== version) {
     console.error(`Version mismatch: tag ${tag} implies ${expected}, plugin.json declares ${version}`);
