@@ -57,12 +57,13 @@ Untested. Needs verification of plugin loading, skill discovery, and OAuth handl
 
 ## Known ecosystem deviations
 
-**Path-suffixed protected resource metadata returns HTML.**
-`https://usable.dev/.well-known/oauth-protected-resource/api/mcp` serves the site's HTML
-rather than JSON or a 404. Clients that build that URL by convention — appending the resource
+**Path-suffixed protected resource metadata returned HTML. Fixed 2026-08-07.**
+`https://usable.dev/.well-known/oauth-protected-resource/api/mcp` used to serve the site's
+HTML rather than JSON, so clients that build that URL by convention — appending the resource
 path, per RFC 9728 §3.1 — instead of reading the `resource_metadata` parameter from the
-`WWW-Authenticate` header will fail discovery. Clients that follow the header succeed.
-Reported upstream; tracked for a server-side fix.
+`WWW-Authenticate` header failed discovery. Both URLs now return the same JSON document, and
+unmatched paths under `.well-known` return a JSON `404` rather than the app shell. No client
+workaround is needed.
 
 **`plain` PKCE is advertised.** The authorization server lists both `S256` and `plain` in
 `code_challenge_methods_supported`. Clients must use `S256`.

@@ -49,12 +49,13 @@ Then:
 
 ```bash
 curl -sS https://usable.dev/.well-known/oauth-protected-resource
+curl -sS https://usable.dev/.well-known/oauth-protected-resource/api/mcp
 curl -sS https://usable.dev/.well-known/oauth-authorization-server
 ```
 
-Both must return JSON. If they do and your client still fails, the client is likely building
-the path-suffixed metadata URL by convention instead of reading the `resource_metadata`
-parameter — see the known deviation in `supported-clients.md`.
+All three must return JSON, and the first two must return the same document — a client is
+free to reach the metadata either by reading `resource_metadata` from the challenge header or
+by constructing the path-suffixed URL per RFC 9728 §3.1.
 
 **Browser never opens.** Headless or remote environments cannot complete the interactive
 flow. Do not work around this by adding a static credential to `mcp.json`. See the headless
