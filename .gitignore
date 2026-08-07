@@ -11,7 +11,12 @@ node_modules/
 .claude/
 .codex/
 .cursor/
-.agents/
+
+# .agents holds local state AND the committed Codex marketplace descriptor.
+# The trailing /* matters: git cannot re-include a path whose parent DIRECTORY
+# is excluded, so ".agents/" plus "!.agents/plugins/" would silently fail.
+.agents/*
+!.agents/plugins/
 
 # Environment — must never be committed
 .env

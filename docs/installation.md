@@ -1,13 +1,26 @@
 # Installation
 
-> **Status: pre-release.** No client has completed acceptance testing yet, so no client is
-> listed as supported. See `supported-clients.md`. The steps below describe the intended
-> installation path and are expected to change as each client is validated.
+> **Status: pre-release.** No client has completed all five acceptance steps yet. Codex is
+> partially verified: the package loads and both skills reach the model. See
+> `supported-clients.md` for exactly what is proven and what is not.
 
 Agent Plugins 1.0.0 standardizes package *structure and loading*. It deliberately does not
 standardize installation, registries, updates, or rollback. There is therefore no single
 install command that works everywhere — each client needs its own instructions, which is why
 per-client documentation is a release blocker rather than optional polish.
+
+In practice clients install plugins from their own sources rather than from archives. Codex,
+for example, installs from *marketplaces*, which is why this repository also ships a
+marketplace descriptor at `.agents/plugins/marketplace.json`.
+
+## Quickest path (Codex, verified)
+
+```bash
+codex plugin marketplace add flowcore-io/usable-agent-plugin --ref main
+codex plugin add usable@usable
+```
+
+Full steps, verification, and uninstall: [`../examples/codex/README.md`](../examples/codex/README.md).
 
 ## What you are installing
 
@@ -18,7 +31,8 @@ per-client documentation is a release blocker rather than optional polish.
 | `mcp.json` | Declares one remote MCP server at `https://usable.dev/api/mcp` over `streamable-http` |
 
 Skills are plain Markdown. Read them before enabling them — all instruction text is in
-`skills/`, and the package contains no executable code.
+`skills/`. The release archive contains no executable code; a marketplace or Git install also
+materialises `scripts/` and `tests/`, which the client does not execute.
 
 ## Prerequisites
 
@@ -29,7 +43,8 @@ Skills are plain Markdown. Read them before enabling them — all instruction te
 
 ## Install from a tagged release
 
-Pin a version. Do not track `main` for anything you rely on.
+For clients that accept a plain package directory. Pin a version; do not track `main` for
+anything you rely on.
 
 ```bash
 VERSION=0.1.0

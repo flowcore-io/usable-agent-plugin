@@ -6,7 +6,8 @@ already decided before implementing, retrieve complete sources, separate evidenc
 assumptions, and verify before claiming success.
 
 > **Status: pre-release (`0.1.0`), not yet released.**
-> No client has completed acceptance testing, so no client is listed as supported yet. See
+> Codex is partially verified — the package loads and both skills reach the model. No client
+> has completed all five acceptance steps, so none is listed as fully supported. See
 > [`docs/supported-clients.md`](docs/supported-clients.md).
 
 ## Contents
@@ -17,21 +18,31 @@ assumptions, and verify before claiming success.
 | [`usable-knowledge-capture`](skills/usable-knowledge-capture/SKILL.md) | Write verified outcomes back to Usable — gated on verification, deduplication, and explicit user confirmation |
 | [`mcp.json`](mcp.json) | Declares the hosted Usable MCP server at `https://usable.dev/api/mcp` over `streamable-http` |
 
-The package contains **no executable code and no credentials** — only Markdown instructions
-and two JSON files. Read `skills/` before enabling it.
+No credentials ship in this package, anywhere. The **release archive** contains only Markdown
+and JSON — no executable code, no dependencies, no install hooks. A **marketplace or Git
+install** materialises the repository, so `scripts/` and `tests/` are present in the installed
+copy; the client does not execute them, but they are there.
+
+All instruction text is in `skills/`. Read it before enabling.
 
 ## Install
 
+**Codex** (verified — loads the package and both skills):
+
 ```bash
-VERSION=0.1.0
-curl -fsSLO "https://github.com/flowcore-io/usable-agent-plugin/releases/download/v${VERSION}/usable-agent-plugin-${VERSION}.tar.gz"
-curl -fsSLO "https://github.com/flowcore-io/usable-agent-plugin/releases/download/v${VERSION}/usable-agent-plugin-${VERSION}.tar.gz.sha256"
-shasum -a 256 -c "usable-agent-plugin-${VERSION}.tar.gz.sha256"
-tar -xzf "usable-agent-plugin-${VERSION}.tar.gz"
+codex plugin marketplace add flowcore-io/usable-agent-plugin --ref main
+codex plugin add usable@usable
 ```
 
-Extract into your client's plugin directory, then restart the client. Full steps, upgrade,
-rollback, and uninstall: [`docs/installation.md`](docs/installation.md).
+Confirm the model can see them:
+
+```bash
+codex exec "List the names of every skill available to you, one per line, then stop."
+# expect: usable:usable-knowledge-workflow / usable:usable-knowledge-capture
+```
+
+Other clients, tagged releases with checksum verification, upgrade, rollback, and uninstall:
+[`docs/installation.md`](docs/installation.md) and [`examples/codex/README.md`](examples/codex/README.md).
 
 ## Authentication
 

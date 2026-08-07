@@ -20,8 +20,8 @@ Legend: ✅ verified · ⚠️ partial · ❌ not supported · ⏳ untested
 
 | Client | Plugin loading | Agent Skills | `streamable-http` MCP | OAuth 2.1 + PKCE | OS tested | Last tested | Status |
 |---|---|---|---|---|---|---|---|
+| Codex CLI 0.146.0 | ✅ | ✅ | ⏳ | ⏳ | macOS | 2026-08-07 | Partial (steps 1 of 5) |
 | Claude Code | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
-| Codex | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
 | Warp / Oz | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
 | Cursor | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
 | Opencode | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
@@ -29,20 +29,50 @@ Legend: ✅ verified · ⚠️ partial · ❌ not supported · ⏳ untested
 Launch targets are [open decision #2](../README.md#open-decisions). Two clients must reach
 ✅ across all columns before `1.0.0`.
 
+Agent Plugins 1.0.0 was published on 2026-08-06 with launch support announced for ChatGPT and
+Codex, Cursor, GitHub Copilot, Kiro, and VS Code. Claude Code is not among them — it uses its
+own `.claude-plugin/plugin.json` format — so Claude Code support should be treated as
+unlikely until tested, not merely unverified.
+
 ## Per-client notes
 
 Each section gets filled in during acceptance testing with the plugin directory path, the
 tested client version, how skills are enabled, how MCP is configured and removed, and any
 deviations found.
 
-### Claude Code
-Untested. Reads project skills from `.claude/skills/` only; a plugin package placed elsewhere
-may not be discovered. Needs verification of whether the plugin loader picks up `skills/`
-from an Agent Plugins package directly.
-
 ### Codex
-Untested. Needs verification of plugin directory location and whether `mcp.json` from the
-package is merged into the client's MCP configuration or must be declared separately.
+Partially verified on 2026-08-07 against Codex CLI 0.146.0 on macOS.
+
+**Step 1 passed.** The package loads and both skills are exposed to the model, namespaced by
+plugin name:
+
+```
+usable:usable-knowledge-workflow
+usable:usable-knowledge-capture
+```
+
+Codex installs plugins from *marketplaces* rather than from archives, so this repository also
+ships a marketplace descriptor at `.agents/plugins/marketplace.json`. See
+[`../examples/codex/README.md`](../examples/codex/README.md) for exact steps.
+
+**Step 2 inconclusive, not passed.** The MCP entry could not be attributed to the plugin: the
+test machine already had an identical `[mcp_servers.usable]` entry in `~/.codex/config.toml`
+pointing at the same URL, so `codex mcp list` showed the server both with the plugin installed
+and after removing it. Re-test on a machine with no pre-existing `usable` MCP server before
+marking this ✅. This also flags a real collision risk: a plugin server keyed `usable` may be
+shadowed by, or conflict with, a user-level server of the same name.
+
+**Steps 3–5 untested.**
+
+Note on packaging: a local or Git marketplace materialises the repository as the plugin root,
+so `scripts/`, `tests/`, and `.github/` are present in the installed copy. They are not
+executed by the client, but the "Markdown and JSON only" property holds strictly for the
+release archive, not for a marketplace install.
+
+### Claude Code
+Untested, and expected to need a separate format. Claude Code uses `.claude-plugin/plugin.json`
+and reads project skills from `.claude/skills/`; it was not part of the Agent Plugins launch
+lineup. Supporting it may require a client extension namespace or a distinct package.
 
 ### Warp / Oz
 Untested. Supports MCP servers and skills natively; needs verification of whether an Agent
