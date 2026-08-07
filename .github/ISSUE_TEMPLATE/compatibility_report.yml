@@ -1,0 +1,88 @@
+name: Client compatibility report
+description: Report acceptance-test results for an agent client
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Results for the five acceptance steps in
+        [`docs/supported-clients.md`](https://github.com/flowcore-io/usable-agent-plugin/blob/main/docs/supported-clients.md).
+
+        **Negative results are valuable.** A documented failure is more useful
+        than an optimistic guess, and no client is listed as supported until it
+        passes all five steps.
+
+  - type: input
+    id: client
+    attributes:
+      label: Client and exact version
+      placeholder: 'Codex 0.48.0'
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version tested
+      placeholder: '0.1.0'
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acceptance
+    attributes:
+      label: Acceptance steps that passed
+      options:
+        - label: '1. Package loads and both skills are discoverable'
+        - label: '2. The `usable` MCP server connects and completes OAuth'
+        - label: '3. A knowledge retrieval succeeds and the agent cites its sources'
+        - label: '4. With MCP unavailable, skills still load and the agent reports degraded mode'
+        - label: '5. Install, upgrade, rollback, and uninstall all performed'
+
+  - type: input
+    id: plugin-dir
+    attributes:
+      label: Plugin directory used
+      description: Where the package had to be placed for the client to find it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: install-steps
+    attributes:
+      label: Exact installation steps
+      description: What you ran, in order. This becomes the client's documented install guide.
+    validations:
+      required: true
+
+  - type: textarea
+    id: failures
+    attributes:
+      label: Failures
+      description: Verbatim error text for any step that did not pass.
+      render: shell
+
+  - type: dropdown
+    id: isolation
+    attributes:
+      label: Component failure isolation
+      description: With the MCP server removed or unreachable, did the skills still load?
+      options:
+        - 'Yes — skills loaded, MCP failed independently'
+        - 'No — the whole plugin failed to load'
+        - Not tested
+    validations:
+      required: true
+
+  - type: textarea
+    id: deviations
+    attributes:
+      label: Deviations from the specification
+      description: Anything the client does differently from Agent Plugins 1.0.0.

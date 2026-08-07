@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/flowcore-io/usable-agent-plugin/security/advisories/new
+    about: Use private reporting. Never open a public issue for a vulnerability.
+  - name: Agent Plugins specification
+    url: https://github.com/agentplugins/agent-plugins-spec
+    about: Specification gaps and interoperability issues belong upstream, not here.
+  - name: Usable documentation
+    url: https://usable.dev/docs/api
+    about: Questions about the Usable service, its API, or data handling.

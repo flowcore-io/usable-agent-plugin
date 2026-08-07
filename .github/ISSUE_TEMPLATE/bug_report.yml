@@ -1,0 +1,90 @@
+name: Bug report
+description: Something in the plugin does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security vulnerabilities here.** Use the private path in
+        [SECURITY.md](https://github.com/flowcore-io/usable-agent-plugin/blob/main/SECURITY.md).
+
+        Redact tokens and any workspace identifiers you consider sensitive.
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: '0.1.0'
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: Agent client and exact version
+      placeholder: 'Claude Code 2.1.4'
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+      placeholder: 'macOS 15.3'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Include verbatim error text.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: validator
+    attributes:
+      label: Validator output
+      description: Output of `node scripts/validate-package.mjs`
+      render: shell
+
+  - type: dropdown
+    id: mcp-status
+    attributes:
+      label: MCP server status in your client
+      options:
+        - Connected and authenticated
+        - Connected but unauthenticated
+        - Failed to connect
+        - Not configured
+        - Unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: degraded
+    attributes:
+      label: Degraded-mode honesty
+      description: >
+        If the agent gave a confident answer while Usable was unreachable,
+        check this — it is a behavior bug we specifically want to know about.
+      options:
+        - label: The agent answered as if it had searched Usable, but had not

@@ -1,0 +1,29 @@
+# Code owners for the Usable Agent Plugin.
+#
+# Review is mandatory on the paths that can change agent behavior, expand the
+# trust boundary, or affect what gets published. Later matches win, so the
+# high-scrutiny paths are listed last.
+#
+# TODO(M0): replace @flowcore-io/usable-maintainers with the real maintainer
+# team, and add a distinct security reviewer team. At least two people must be
+# able to publish and revoke releases; no single personal account should be the
+# sole release authority.
+
+*                           @flowcore-io/usable-maintainers
+
+# Instructions that change what agents do.
+/skills/                    @flowcore-io/usable-maintainers
+
+# Highest scrutiny: must stay URL-only and credential-free.
+/mcp.json                   @flowcore-io/usable-maintainers
+/plugin.json                @flowcore-io/usable-maintainers
+
+# Release and validation machinery.
+/.github/workflows/         @flowcore-io/usable-maintainers
+/scripts/                   @flowcore-io/usable-maintainers
+
+# Security posture and disclosure.
+/SECURITY.md                @flowcore-io/usable-maintainers
+/docs/threat-model.md       @flowcore-io/usable-maintainers
+/docs/authentication.md     @flowcore-io/usable-maintainers
+/docs/permissions-and-data-flow.md  @flowcore-io/usable-maintainers

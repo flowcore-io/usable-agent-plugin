@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "usable",
+  "version": "0.1.0",
+  "description": "Knowledge-first workflow for agents backed by Usable. Search team knowledge before implementing, retrieve complete sources, separate evidence from assumptions, and verify before claiming success.",
+  "author": {
+    "name": "Flowcore",
+    "email": "support@usable.dev",
+    "url": "https://usable.dev"
+  },
+  "homepage": "https://usable.dev",
+  "repository": "https://github.com/flowcore-io/usable-agent-plugin",
+  "license": "MIT",
+  "keywords": [
+    "usable",
+    "knowledge",
+    "memory",
+    "mcp",
+    "agent-skills",
+    "retrieval",
+    "verification"
+  ]
+}
