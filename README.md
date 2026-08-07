@@ -89,14 +89,20 @@ scopes you actually grant; prompt instructions are not an enforcement boundary.
 
 Tracked from the PRD, unresolved:
 
-1. Repository name — provisionally `flowcore-io/usable-agent-plugin`
-2. Launch client targets — two must pass acceptance before `1.0.0`
+1. ~~Repository name~~ — resolved: `flowcore-io/usable-agent-plugin`
+2. Launch client targets — Codex partially verified; a second client must reach ✅ before `1.0.0`
 3. ~~License~~ — resolved: MIT
-4. Whether `1.0.0` ships read-only, or includes verified writeback
+4. ~~Read-only or writeback in v1~~ — resolved: **v1 includes verified writeback.** Both
+   skills ship, and `usable-knowledge-capture` is a supported v1 capability rather than a
+   deferred experiment. Writes stay gated on verification, deduplication, redaction, and
+   explicit user confirmation, and they require write scopes the user grants deliberately.
 5. Headless authorization profile — `client_credentials` and `device_code` are advertised but neither is wired up or tested
 6. Public data-processing, retention, and revocation disclosure wording
 7. Whether releases need signed attestations in addition to tags and checksums
 8. Ownership of client compatibility testing as client plugin loaders change
+9. Whether the OAuth resource indicator should be `https://usable.dev` (as the metadata
+   advertises) or `https://usable.dev/api/mcp` (the endpoint served), and whether token
+   audiences validate either way — untested, needs a real authorization flow
 
 ## Contributing
 

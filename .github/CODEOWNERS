@@ -4,10 +4,13 @@
 # trust boundary, or affect what gets published. Later matches win, so the
 # high-scrutiny paths are listed last.
 #
-# TODO(M0): replace @flowcore-io/usable-maintainers with the real maintainer
-# team, and add a distinct security reviewer team. At least two people must be
-# able to publish and revoke releases; no single personal account should be the
-# sole release authority.
+# The @flowcore-io/usable-maintainers team exists and holds maintain on this
+# repository.
+#
+# TODO: add a second maintainer. At least two people must be able to publish and
+# revoke releases; no single personal account should be the sole release
+# authority, and a one-person team does not satisfy that. A distinct security
+# reviewer team is also still outstanding.
 
 *                           @flowcore-io/usable-maintainers
 
