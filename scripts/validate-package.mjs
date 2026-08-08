@@ -40,6 +40,25 @@ const pass = (msg) => passes.push(msg);
 const read = (p) => readFileSync(join(ROOT, p), "utf8");
 const readJson = (p) => JSON.parse(read(p));
 
+/**
+ * Collects every string in a nested structure that looks like a plugin-relative
+ * path, so extension-declared assets can be checked for existence.
+ */
+function collectPluginRelativePaths(node, acc = []) {
+  if (typeof node === "string") {
+    if (node.startsWith("./") || /^\.\.?\//.test(node)) acc.push(node);
+    return acc;
+  }
+  if (Array.isArray(node)) {
+    for (const item of node) collectPluginRelativePaths(item, acc);
+    return acc;
+  }
+  if (node && typeof node === "object") {
+    for (const value of Object.values(node)) collectPluginRelativePaths(value, acc);
+  }
+  return acc;
+}
+
 /** Recursively walk the repo, skipping VCS and ignored build dirs. */
 function walk(dir, acc = []) {
   const SKIP = new Set([".git", "node_modules", "dist"]);
@@ -100,6 +119,24 @@ function validateManifest() {
     for (const key of Object.keys(m.extensions)) {
       if (!key.includes(".")) {
         fail(CHECK, `extension key "${key}" must use a reverse-domain namespace`);
+      }
+    }
+
+    // Client extensions may reference packaged files (icons, logos). A broken
+    // reference ships a plugin that renders without branding, which is exactly
+    // the sort of defect that is invisible until a user sees it.
+    for (const [ns, value] of Object.entries(m.extensions)) {
+      for (const path of collectPluginRelativePaths(value)) {
+        if (!path.startsWith("./")) {
+          fail(CHECK, `extension "${ns}" path ${JSON.stringify(path)} must be plugin-relative and begin with "./"`);
+          continue;
+        }
+        const resolved = resolve(ROOT, path);
+        if (!resolved.startsWith(ROOT + sep)) {
+          fail(CHECK, `extension "${ns}" path ${JSON.stringify(path)} escapes the plugin root`);
+        } else if (!existsSync(resolved)) {
+          fail(CHECK, `extension "${ns}" references missing file ${path}`);
+        }
       }
     }
   }

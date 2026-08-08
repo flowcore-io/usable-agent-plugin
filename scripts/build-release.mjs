@@ -27,6 +27,7 @@ const ALLOWLIST = [
   "plugin.json",
   "mcp.json",
   "skills/",
+  "assets/",
   "docs/",
   "README.md",
   "LICENSE",

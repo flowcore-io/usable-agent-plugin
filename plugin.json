@@ -8,7 +8,7 @@
     "email": "support@usable.dev",
     "url": "https://usable.dev"
   },
-  "homepage": "https://usable.dev",
+  "homepage": "https://www.usable.dev",
   "repository": "https://github.com/flowcore-io/usable-agent-plugin",
   "license": "MIT",
   "keywords": [
@@ -19,5 +19,27 @@
     "agent-skills",
     "retrieval",
     "verification"
-  ]
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Usable",
+        "shortDescription": "Search your team's knowledge before you build.",
+        "longDescription": "Grounds the agent in decisions your team already made. It searches Usable before proposing an approach, retrieves complete sources rather than snippets, separates evidence from assumptions, and verifies before claiming success. Verified outcomes can be captured back so the next person does not rediscover them.",
+        "developerName": "Flowcore",
+        "category": "Productivity",
+        "websiteURL": "https://www.usable.dev",
+        "privacyPolicyURL": "https://www.usable.dev/privacy",
+        "termsOfServiceURL": "https://www.usable.dev/terms",
+        "brandColor": "#347cbf",
+        "composerIcon": "./assets/usable-icon.svg",
+        "logo": "./assets/usable-logo.png",
+        "defaultPrompt": [
+          "Search Usable for prior decisions about this task before proposing an approach"
+        ],
+        "capabilities": [],
+        "screenshots": []
+      }
+    }
+  }
 }
