@@ -5,6 +5,32 @@ All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+- Usable brand assets: `assets/usable-icon.svg` (composer icon) and `assets/usable-logo.png`
+  (600×600 logo), taken from the Usable brand kit.
+- Codex interface metadata under the `extensions["com.openai"]` namespace in `plugin.json`:
+  display name, short and long descriptions, developer name, category, website, privacy and
+  terms URLs, brand colour `#347cbf`, icon and logo paths, and a default prompt.
+- Validation of client-extension file references: paths must be plugin-relative, must stay
+  inside the plugin root, and must exist. Three new self-tests cover a missing asset, a path
+  escaping the root, and a namespace without a reverse domain.
+
+### Changed
+- `assets/` is now included in the release archive allowlist.
+- `homepage` and author URL now use the canonical `https://www.usable.dev`, which is where
+  the apex domain redirects.
+
+### Notes
+- Codex surfaced the plugin with a generic icon and "Website: Unavailable" because it reads
+  presentation metadata from an `interface` object, not from the Agent Plugins `homepage`
+  field. **Whether Codex reads that object from the inline `com.openai` extension has not been
+  verified visually** — the CLI exposes no way to inspect resolved interface metadata. If the
+  icon and website still do not render, the fallback is a `.codex-plugin/plugin.json` overlay,
+  which must be added carefully because a malformed overlay could disturb skill discovery that
+  currently works.
+
 ## 0.1.0 — 2026-08-07
 
 First prerelease. No client has completed all five acceptance steps, so no client is listed

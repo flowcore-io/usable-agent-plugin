@@ -36,7 +36,7 @@ function runValidator(dir) {
 function inSandbox(mutate) {
   const dir = mkdtempSync(join(tmpdir(), "uap-test-"));
   try {
-    for (const entry of ["plugin.json", "mcp.json", "skills", "docs", "scripts", "LICENSE"]) {
+    for (const entry of ["plugin.json", "mcp.json", "skills", "assets", "docs", "scripts", "LICENSE"]) {
       cpSync(join(ROOT, entry), join(dir, entry), { recursive: true });
     }
     mutate(dir);
@@ -178,6 +178,35 @@ const cases = [
     },
     expect: (r) => r.code === 1 && /LICENSE/.test(r.output),
     describe: "should require a license file",
+  },
+  {
+    name: "rejects a missing extension asset",
+    mutate: (dir) => {
+      rmSync(join(dir, "assets", "usable-icon.svg"));
+    },
+    expect: (r) => r.code === 1 && /references missing file/.test(r.output),
+    describe: "should catch an icon path that does not resolve",
+  },
+  {
+    name: "rejects an extension path escaping the plugin root",
+    mutate: (dir) => {
+      const m = JSON.parse(readFileSync(join(dir, "plugin.json"), "utf8"));
+      m.extensions["com.openai"].interface.logo = "../../../etc/passwd";
+      writeFileSync(join(dir, "plugin.json"), JSON.stringify(m, null, 2));
+    },
+    expect: (r) => r.code === 1 && /(escapes the plugin root|must be plugin-relative)/.test(r.output),
+    describe: "should enforce containment on extension-declared paths",
+  },
+  {
+    name: "rejects an extension namespace without a reverse domain",
+    mutate: (dir) => {
+      const m = JSON.parse(readFileSync(join(dir, "plugin.json"), "utf8"));
+      m.extensions.codex = m.extensions["com.openai"];
+      delete m.extensions["com.openai"];
+      writeFileSync(join(dir, "plugin.json"), JSON.stringify(m, null, 2));
+    },
+    expect: (r) => r.code === 1 && /reverse-domain namespace/.test(r.output),
+    describe: "should require reverse-domain extension keys",
   },
   {
     name: "rejects an undocumented MCP url",

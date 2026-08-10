@@ -10,8 +10,12 @@ Intended for security reviewers deciding whether to allow this plugin in an orga
 | Runtime dependencies | None. |
 | Instruction text | `skills/**/*.md` — plain Markdown, fully auditable. |
 | Network configuration | One remote MCP server declaration in `mcp.json`. |
+| Static images | `assets/usable-icon.svg` and `assets/usable-logo.png` — branding only, no scripts. |
 | Credentials | None. |
 | Local filesystem access | None requested by the plugin itself. |
+
+The SVG contains only path geometry. It declares no `<script>`, no external references, and
+no event handlers, so it cannot execute anything when a client renders it.
 
 The repository contains Node scripts under `scripts/` for validation and release builds.
 These run in CI and for local development only, and are excluded from the release archive.
