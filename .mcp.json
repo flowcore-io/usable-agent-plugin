@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "usable": {
+      "type": "http",
+      "url": "https://usable.dev/api/mcp",
+      "oauth": {
+        "clientId": "mcp_oauth_client"
+      }
+    }
+  }
+}

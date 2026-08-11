@@ -17,6 +17,7 @@ assumptions, and verify before claiming success.
 | [`usable-knowledge-workflow`](skills/usable-knowledge-workflow/SKILL.md) | Read-first loop: search Usable, fetch complete sources, rank by verification and freshness, write a knowledge receipt, verify before claiming done |
 | [`usable-knowledge-capture`](skills/usable-knowledge-capture/SKILL.md) | Write verified outcomes back to Usable — gated on verification, deduplication, and explicit user confirmation |
 | [`mcp.json`](mcp.json) | Declares the hosted Usable MCP server at `https://usable.dev/api/mcp` over `streamable-http` |
+| [`.mcp.json`](.mcp.json) | The same server for Claude Code, which uses transport `http` and reads a different filename |
 
 No credentials ship in this package, anywhere. The **release archive** contains only Markdown
 and JSON — no executable code, no dependencies, no install hooks. A **marketplace or Git
@@ -27,22 +28,34 @@ All instruction text is in `skills/`. Read it before enabling.
 
 ## Install
 
-**Codex** (verified — loads the package and both skills):
+The package ships manifests for both the Agent Plugins standard and Claude Code's own format,
+so it installs in either.
+
+**Codex** — loads the package and both skills:
 
 ```bash
 codex plugin marketplace add flowcore-io/usable-agent-plugin --ref main
 codex plugin add usable@usable
 ```
 
-Confirm the model can see them:
-
 ```bash
 codex exec "List the names of every skill available to you, one per line, then stop."
 # expect: usable:usable-knowledge-workflow / usable:usable-knowledge-capture
 ```
 
-Other clients, tagged releases with checksum verification, upgrade, rollback, and uninstall:
-[`docs/installation.md`](docs/installation.md) and [`examples/codex/README.md`](examples/codex/README.md).
+**Claude Code** — marketplace registers, plugin installs and enables:
+
+```bash
+claude plugin marketplace add flowcore-io/usable-agent-plugin
+claude plugin install usable@usable
+```
+
+Per-client detail: [`examples/codex/`](examples/codex/README.md) and
+[`examples/claude-code/`](examples/claude-code/README.md). Tagged releases with checksum
+verification, upgrade, rollback, and uninstall: [`docs/installation.md`](docs/installation.md).
+
+If your client already has an MCP server named `usable`, it shadows the plugin's declaration —
+see [authentication](docs/authentication.md).
 
 ## Authentication
 

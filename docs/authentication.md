@@ -59,8 +59,32 @@ GET https://usable.dev/.well-known/oauth-authorization-server
 | `grant_types_supported` | `authorization_code`, `refresh_token`, `client_credentials`, `device_code` |
 | `token_endpoint_auth_methods_supported` | `client_secret_basic`, `client_secret_post`, `none` |
 
-Dynamic client registration is available, so clients do not need a pre-registered client ID.
-Public clients may register with `none` and use PKCE.
+Dynamic client registration is available, so a client can obtain its own ID. Public clients may
+register with `none` and use PKCE.
+
+### The default client ID
+
+Usable's default MCP configuration uses the public client ID **`mcp_oauth_client`**. Clients
+that do not implement dynamic registration, or that prefer a fixed ID, should use it:
+
+```bash
+# Claude Code
+claude mcp add --transport http usable https://usable.dev/api/mcp --client-id mcp_oauth_client
+
+# Codex
+codex mcp add usable --url https://usable.dev/api/mcp --oauth-client-id mcp_oauth_client
+```
+
+An OAuth `client_id` is a public identifier, not a secret — it is safe in a shared config and
+in this repository. This package declares it for Claude Code in `.mcp.json` under
+`oauth.clientId`, which is the field Claude Code reads.
+
+A client **secret** is a different thing entirely and must never be packaged. CI enforces the
+distinction: the validator permits only `clientId`, `callbackPort`, and `scopes` inside an
+`oauth` block and fails on anything else, so a secret cannot slip in by being unrecognised.
+
+The Agent Plugins `mcp.json` stays URL-only. Its schema does not define an `oauth` field, and
+inventing one risks rejection by a strict client.
 
 **4. Authorize with PKCE**
 
@@ -97,6 +121,27 @@ Neither is wired into this plugin, and neither is covered by the compatibility m
 Do **not** work around a headless client by committing a shared static credential into
 `mcp.json` — that defeats per-user authorization and rotation. Track this in
 [open decision #5](../README.md#open-decisions).
+
+## A user-level server of the same name shadows this one
+
+If your client already has an MCP server named `usable` at user or project scope, that entry
+takes precedence and the plugin's declaration is silently ignored. Confirmed on both Claude
+Code and Codex.
+
+Two consequences worth knowing:
+
+- You cannot tell from `claude mcp list` or `codex mcp list` whether a `usable` server came
+  from this plugin or from your own config. On Claude Code a plugin-provided server appears as
+  `plugin:usable:usable`; a bare `usable` is yours, not the plugin's.
+- If your existing entry authenticates with a static bearer token rather than OAuth, you keep
+  that behaviour — and none of this package's credential hygiene applies to it. A long-lived
+  token in a client config is worth replacing with the OAuth flow.
+
+To let the plugin's declaration take effect, remove or rename the user-level entry:
+
+```bash
+claude mcp remove usable      # or: codex mcp remove usable
+```
 
 ## Revoking access
 

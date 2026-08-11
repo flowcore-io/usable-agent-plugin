@@ -18,10 +18,10 @@ support based on a client advertising Agent Plugins compatibility.
 
 Legend: ✅ verified · ⚠️ partial · ❌ not supported · ⏳ untested
 
-| Client | Plugin loading | Agent Skills | `streamable-http` MCP | OAuth 2.1 + PKCE | OS tested | Last tested | Status |
+| Client | Plugin loading | Agent Skills | Remote MCP | OAuth 2.1 + PKCE | OS tested | Last tested | Status |
 |---|---|---|---|---|---|---|---|
-| Codex CLI 0.146.0 | ✅ | ✅ | ⏳ | ⏳ | macOS | 2026-08-07 | Partial (steps 1 of 5) |
-| Claude Code | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
+| Codex CLI 0.146.0 | ✅ | ✅ | ⏳ | ⏳ | macOS | 2026-08-07 | Partial (1 of 5) |
+| Claude Code 2.1.227 | ✅ | ⏳ | ⏳ | ⏳ | macOS | 2026-08-11 | Partial (1 of 5) |
 | Warp / Oz | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
 | Cursor | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
 | Opencode | ⏳ | ⏳ | ⏳ | ⏳ | — | — | Untested |
@@ -30,9 +30,29 @@ Launch targets are [open decision #2](../README.md#open-decisions). Two clients 
 ✅ across all columns before `1.0.0`.
 
 Agent Plugins 1.0.0 was published on 2026-08-06 with launch support announced for ChatGPT and
-Codex, Cursor, GitHub Copilot, Kiro, and VS Code. Claude Code is not among them — it uses its
-own `.claude-plugin/plugin.json` format — so Claude Code support should be treated as
-unlikely until tested, not merely unverified.
+Codex, Cursor, GitHub Copilot, Kiro, and VS Code. Claude Code is not among them and uses its
+own manifest format, so this package ships both sets of manifests — see
+[Supporting two formats](#supporting-two-formats).
+
+## Supporting two formats
+
+The two clients disagree on filenames and on one transport identifier, so both are shipped.
+Only `skills/` is genuinely shared.
+
+| Concern | Agent Plugins | Claude Code |
+|---|---|---|
+| Plugin manifest | `plugin.json` | `.claude-plugin/plugin.json` |
+| Marketplace catalogue | `.agents/plugins/marketplace.json` (Codex) | `.claude-plugin/marketplace.json` |
+| MCP config | `mcp.json` | `.mcp.json` |
+| Remote transport | `streamable-http` | `http` |
+| Skills | `skills/` | `skills/` |
+
+The duplication is a drift risk, so CI guards it: the validator asserts the two MCP documents
+declare the same servers pointing at the same URLs, and that the two plugin manifests agree on
+name and version. Editing one and forgetting the other fails the build.
+
+This mirrors what other multi-client plugins do — Slack's official Claude Code plugin ships
+`.claude-plugin/`, `.codex-plugin/`, `.cursor-plugin/` and `.agents/` side by side.
 
 ## Per-client notes
 
@@ -70,9 +90,29 @@ executed by the client, but the "Markdown and JSON only" property holds strictly
 release archive, not for a marketplace install.
 
 ### Claude Code
-Untested, and expected to need a separate format. Claude Code uses `.claude-plugin/plugin.json`
-and reads project skills from `.claude/skills/`; it was not part of the Agent Plugins launch
-lineup. Supporting it may require a client extension namespace or a distinct package.
+Partially verified on 2026-08-11 against Claude Code 2.1.227 on macOS.
+
+**Step 1 passed.** The marketplace registers and the plugin installs and enables:
+
+```
+usable@usable   Version: 0.1.0   Scope: user   Status: ✔ enabled
+```
+
+See [`../examples/claude-code/README.md`](../examples/claude-code/README.md) for exact steps.
+Note `claude plugin marketplace add ./` — a bare `.` is rejected.
+
+**Skills not yet confirmed reaching the model.** The package installs, but we have not yet
+observed `usable:usable-knowledge-workflow` and `usable:usable-knowledge-capture` offered in a
+session. Claude Code exposes no CLI listing of available skills, so this needs an interactive
+check.
+
+**Step 2 inconclusive, and for an identified reason.** The test machine had a user-level
+`[mcpServers.usable]` entry in `~/.claude.json` pointing at the same URL, which shadows the
+plugin's declaration — no `plugin:usable:usable` server appeared, while other plugins' servers
+did show under that prefix. This is direct evidence of the collision risk previously recorded
+as a hypothesis for Codex. Re-test on a machine with no pre-existing `usable` server.
+
+**Steps 3–5 untested.**
 
 ### Warp / Oz
 Untested. Supports MCP servers and skills natively; needs verification of whether an Agent

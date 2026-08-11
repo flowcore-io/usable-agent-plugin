@@ -26,6 +26,10 @@ const DIST = join(ROOT, "dist");
 const ALLOWLIST = [
   "plugin.json",
   "mcp.json",
+  // Claude Code reads its own manifests and its own MCP filename. Both clients
+  // are supported from one package, so both sets ship.
+  ".claude-plugin/",
+  ".mcp.json",
   "skills/",
   "assets/",
   "docs/",
@@ -71,8 +75,8 @@ mkdirSync(stage, { recursive: true });
 for (const entry of ALLOWLIST) {
   const src = join(ROOT, entry);
   if (!existsSync(src)) {
-    if (entry === "mcp.json") {
-      console.log(`  skip     ${entry} (absent; skills-only package)`);
+    if (entry === "mcp.json" || entry === ".mcp.json" || entry === ".claude-plugin/") {
+      console.log(`  skip     ${entry} (absent)`);
       continue;
     }
     console.error(`Allowlisted path missing: ${entry}`);

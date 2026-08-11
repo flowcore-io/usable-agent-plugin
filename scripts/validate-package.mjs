@@ -24,6 +24,16 @@ const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const PLUGIN_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json";
 const MCP_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json";
 const VALID_TRANSPORTS = ["stdio", "streamable-http", "sse"];
+
+// Claude Code reads its own manifests and uses "http" where Agent Plugins says
+// "streamable-http". Supporting both clients means shipping both files, so the
+// duplication is deliberate and guarded by a parity check below.
+const CLAUDE_DIR = ".claude-plugin";
+const CLAUDE_MCP = ".mcp.json";
+const CLAUDE_TRANSPORTS = ["stdio", "http", "sse"];
+// An OAuth client_id is a public identifier, not a credential, so it may be
+// packaged. Anything that could carry a secret may not.
+const CLAUDE_OAUTH_PUBLIC_KEYS = new Set(["clientId", "callbackPort", "scopes"]);
 const ALLOWED_MANIFEST_KEYS = new Set([
   "$schema", "name", "version", "description", "author",
   "homepage", "repository", "license", "keywords", "extensions",
@@ -266,6 +276,178 @@ function validateMcp() {
   if (errors.every((e) => !e.startsWith(CHECK))) pass(`${CHECK} is URL-only and credential-free`);
 }
 
+// ── Claude Code: .mcp.json ───────────────────────────────────────────────────
+function validateClaudeMcp() {
+  const CHECK = CLAUDE_MCP;
+
+  if (!existsSync(join(ROOT, CLAUDE_MCP))) {
+    warn(CHECK, "not present; Claude Code will load skills but no MCP server");
+    return;
+  }
+
+  let mcp;
+  try {
+    mcp = readJson(CLAUDE_MCP);
+  } catch (e) {
+    fail(CHECK, `invalid JSON — ${e.message}`);
+    return;
+  }
+
+  if (!mcp.mcpServers || typeof mcp.mcpServers !== "object") {
+    fail(CHECK, "missing mcpServers object");
+    return;
+  }
+
+  for (const [name, server] of Object.entries(mcp.mcpServers)) {
+    if (!CLAUDE_TRANSPORTS.includes(server.type)) {
+      fail(CHECK, `server "${name}" type must be one of ${CLAUDE_TRANSPORTS.join(", ")}, found ${JSON.stringify(server.type)} — Claude Code uses "http", not "streamable-http"`);
+    }
+    if (server.type !== "stdio") {
+      if (!server.url) {
+        fail(CHECK, `server "${name}" (${server.type}) needs a url`);
+      } else if (!server.url.startsWith("https://")) {
+        fail(CHECK, `server "${name}" url must use https, found ${server.url}`);
+      }
+    }
+    if (server.headers) {
+      fail(CHECK, `server "${name}" declares headers; credentials must not be packaged`);
+    }
+    if (server.env) {
+      fail(CHECK, `server "${name}" declares env; credential-bearing environment variables must not be packaged`);
+    }
+
+    // Claude Code accepts an oauth block here. A client_id is a public
+    // identifier and is safe to ship; a client secret or token is not. This
+    // fails closed: only explicitly known-public keys are permitted, so a
+    // future secret-bearing field cannot slip through by being unrecognised.
+    if (server.oauth !== undefined) {
+      if (typeof server.oauth !== "object" || server.oauth === null) {
+        fail(CHECK, `server "${name}" oauth must be an object`);
+      } else {
+        for (const key of Object.keys(server.oauth)) {
+          if (!CLAUDE_OAUTH_PUBLIC_KEYS.has(key)) {
+            fail(CHECK, `server "${name}" oauth.${key} is not a recognised public field; only ${[...CLAUDE_OAUTH_PUBLIC_KEYS].join(", ")} may be packaged. Secrets and tokens must never ship.`);
+          }
+        }
+        if (server.oauth.clientId !== undefined && typeof server.oauth.clientId !== "string") {
+          fail(CHECK, `server "${name}" oauth.clientId must be a string`);
+        }
+      }
+    }
+  }
+
+  if (errors.every((e) => !e.startsWith(CHECK))) {
+    pass(`${CHECK} declares no credentials (public oauth client id only)`);
+  }
+}
+
+// ── Parity between the two MCP documents ─────────────────────────────────────
+// They cannot be byte-identical because the transport identifiers differ, so
+// compare what must agree: which servers exist and where they point. Without
+// this, one file could be updated and the other silently left behind.
+function validateMcpParity() {
+  const CHECK = "mcp-parity";
+
+  if (!existsSync(join(ROOT, "mcp.json")) || !existsSync(join(ROOT, CLAUDE_MCP))) return;
+
+  let a, b;
+  try {
+    a = readJson("mcp.json").mcpServers ?? {};
+    b = readJson(CLAUDE_MCP).mcpServers ?? {};
+  } catch {
+    return; // shape errors already reported by the per-file checks
+  }
+
+  const namesA = Object.keys(a).sort();
+  const namesB = Object.keys(b).sort();
+
+  if (namesA.join(",") !== namesB.join(",")) {
+    fail(CHECK, `mcp.json declares [${namesA}] but ${CLAUDE_MCP} declares [${namesB}]; both clients must be offered the same servers`);
+    return;
+  }
+
+  for (const name of namesA) {
+    if (a[name].url !== b[name].url) {
+      fail(CHECK, `server "${name}" points at ${a[name].url} in mcp.json but ${b[name].url} in ${CLAUDE_MCP}`);
+    }
+  }
+
+  if (errors.every((e) => !e.startsWith(CHECK))) {
+    pass(`mcp.json and ${CLAUDE_MCP} agree on servers and URLs`);
+  }
+}
+
+// ── Claude Code: plugin and marketplace manifests ────────────────────────────
+function validateClaudeManifests(rootManifest) {
+  const CHECK = CLAUDE_DIR;
+
+  const pluginPath = join(ROOT, CLAUDE_DIR, "plugin.json");
+  const marketPath = join(ROOT, CLAUDE_DIR, "marketplace.json");
+
+  if (!existsSync(pluginPath) && !existsSync(marketPath)) {
+    warn(CHECK, "absent; the package will not be installable in Claude Code");
+    return;
+  }
+
+  if (existsSync(pluginPath)) {
+    let p;
+    try {
+      p = JSON.parse(readFileSync(pluginPath, "utf8"));
+    } catch (e) {
+      fail(CHECK, `plugin.json invalid JSON — ${e.message}`);
+      p = null;
+    }
+    if (p) {
+      if (!p.name) fail(CHECK, "plugin.json missing required \"name\"");
+      if (rootManifest && p.name && p.name !== rootManifest.name) {
+        fail(CHECK, `plugin.json name "${p.name}" does not match root plugin.json name "${rootManifest.name}"`);
+      }
+      if (rootManifest && p.version && p.version !== rootManifest.version) {
+        fail(CHECK, `plugin.json version "${p.version}" does not match root plugin.json version "${rootManifest.version}"`);
+      }
+      if (!p.description) warn(CHECK, "plugin.json has no description");
+    }
+  } else {
+    fail(CHECK, `marketplace.json present but ${CLAUDE_DIR}/plugin.json is missing`);
+  }
+
+  if (existsSync(marketPath)) {
+    let m;
+    try {
+      m = JSON.parse(readFileSync(marketPath, "utf8"));
+    } catch (e) {
+      fail(CHECK, `marketplace.json invalid JSON — ${e.message}`);
+      m = null;
+    }
+    if (m) {
+      if (!m.name) fail(CHECK, "marketplace.json missing required \"name\"");
+      if (!m.owner || !m.owner.name) fail(CHECK, "marketplace.json missing required \"owner.name\"");
+      if (!Array.isArray(m.plugins) || m.plugins.length === 0) {
+        fail(CHECK, "marketplace.json must list at least one plugin");
+      } else {
+        for (const entry of m.plugins) {
+          if (!entry.name) fail(CHECK, "marketplace.json plugin entry missing \"name\"");
+          if (typeof entry.source === "string") {
+            const resolved = resolve(ROOT, entry.source);
+            if (!resolved.startsWith(ROOT)) {
+              fail(CHECK, `marketplace.json plugin "${entry.name}" source ${entry.source} escapes the repository root`);
+            } else if (!existsSync(join(resolved, CLAUDE_DIR, "plugin.json"))) {
+              fail(CHECK, `marketplace.json plugin "${entry.name}" source ${entry.source} has no ${CLAUDE_DIR}/plugin.json`);
+            }
+          } else if (!entry.source) {
+            fail(CHECK, `marketplace.json plugin "${entry.name}" missing "source"`);
+          }
+          if (rootManifest && entry.version && entry.version !== rootManifest.version) {
+            fail(CHECK, `marketplace.json plugin "${entry.name}" version "${entry.version}" does not match root plugin.json version "${rootManifest.version}"`);
+          }
+        }
+      }
+    }
+  }
+
+  if (errors.every((e) => !e.startsWith(CHECK))) pass(`${CHECK} manifests valid and consistent with plugin.json`);
+}
+
 // ── FR-1: path containment and symlinks ──────────────────────────────────────
 function validatePaths() {
   const CHECK = "paths";
@@ -399,6 +581,9 @@ console.log(`Validating package at ${ROOT}\n`);
 const manifest = validateManifest();
 validateSkills();
 validateMcp();
+validateClaudeMcp();
+validateMcpParity();
+validateClaudeManifests(manifest);
 validatePaths();
 validateNoSecrets();
 validateConsistency(manifest);
