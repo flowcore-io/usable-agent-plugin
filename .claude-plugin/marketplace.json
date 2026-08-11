@@ -1,0 +1,20 @@
+{
+  "name": "usable",
+  "description": "Knowledge-first workflow for coding agents, backed by Usable.",
+  "owner": {
+    "name": "Flowcore",
+    "email": "support@usable.dev",
+    "url": "https://www.usable.dev"
+  },
+  "plugins": [
+    {
+      "name": "usable",
+      "source": "./",
+      "description": "Search your team's knowledge before you build. Retrieves complete sources, separates evidence from assumptions, and verifies before claiming success.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Flowcore"
+      }
+    }
+  ]
+}

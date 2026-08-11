@@ -8,27 +8,49 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## Unreleased
 
 ### Added
+- Claude Code support alongside the Agent Plugins standard: `.claude-plugin/marketplace.json`,
+  `.claude-plugin/plugin.json`, and `.mcp.json`. Only `skills/` is shared between the two
+  formats; filenames and one transport identifier differ, so both sets ship.
+- The public OAuth client ID `mcp_oauth_client` is declared for Claude Code in `.mcp.json`
+  under `oauth.clientId`, and documented for both clients' `add` commands.
+- Drift guards for the duplicated configuration: the validator asserts `mcp.json` and
+  `.mcp.json` declare the same servers pointing at the same URLs, and that the two plugin
+  manifests agree on name and version.
+- `oauth` blocks are validated fail-closed: only `clientId`, `callbackPort`, and `scopes` are
+  permitted, so a client secret cannot ship by being an unrecognised field.
 - Usable brand assets: `assets/usable-icon.svg` (composer icon) and `assets/usable-logo.png`
   (600×600 logo), taken from the Usable brand kit.
 - Codex interface metadata under the `extensions["com.openai"]` namespace in `plugin.json`:
   display name, short and long descriptions, developer name, category, website, privacy and
   terms URLs, brand colour `#347cbf`, icon and logo paths, and a default prompt.
 - Validation of client-extension file references: paths must be plugin-relative, must stay
-  inside the plugin root, and must exist. Three new self-tests cover a missing asset, a path
-  escaping the root, and a namespace without a reverse domain.
+  inside the plugin root, and must exist.
+- Twelve further self-tests covering all of the above; the suite is now 27 cases.
 
 ### Changed
 - `assets/` is now included in the release archive allowlist.
 - `homepage` and author URL now use the canonical `https://www.usable.dev`, which is where
   the apex domain redirects.
 
-### Notes
-- Codex surfaced the plugin with a generic icon and "Website: Unavailable" because it reads
-  presentation metadata from an `interface` object, not from the Agent Plugins `homepage`
-  field. **Whether Codex reads that object from the inline `com.openai` extension has not been
-  verified visually** — the CLI exposes no way to inspect resolved interface metadata. If the
-  icon and website still do not render, the fallback is a `.codex-plugin/plugin.json` overlay,
-  which must be added carefully because a malformed overlay could disturb skill discovery that
+### Fixed
+- `.claude-plugin/` and `.mcp.json` added to the release-archive allowlist. Without this the
+  published artifact would have shipped a package Claude Code could not install.
+
+### Verified
+- Claude Code 2.1.227 on macOS: `claude plugin marketplace add ./` registers the marketplace
+  and `claude plugin install usable@usable` installs and enables the plugin at 0.1.0.
+
+### Known limitations
+- **A user-level MCP server named `usable` shadows the plugin's declaration.** Confirmed on
+  Claude Code, where no `plugin:usable:usable` server appeared while other plugins' servers did.
+  This upgrades the Codex-side collision risk from hypothesis to confirmed behaviour, and it
+  means neither client's MCP step can be verified on a machine that already has such an entry.
+- Claude Code skills are not yet confirmed reaching the model. The plugin installs, but Claude
+  Code exposes no CLI listing of available skills, so this needs an interactive check.
+- Whether Codex reads the `interface` object from the inline `com.openai` extension is still
+  **unverified visually** — the CLI exposes no way to inspect resolved interface metadata. If the
+  icon and website do not render, the fallback is a `.codex-plugin/plugin.json` overlay, which
+  must be added carefully because a malformed overlay could disturb skill discovery that
   currently works.
 
 ## 0.1.0 — 2026-08-07

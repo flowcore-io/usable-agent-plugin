@@ -36,7 +36,10 @@ function runValidator(dir) {
 function inSandbox(mutate) {
   const dir = mkdtempSync(join(tmpdir(), "uap-test-"));
   try {
-    for (const entry of ["plugin.json", "mcp.json", "skills", "assets", "docs", "scripts", "LICENSE"]) {
+    for (const entry of [
+      "plugin.json", "mcp.json", ".mcp.json", ".claude-plugin",
+      "skills", "assets", "docs", "scripts", "LICENSE",
+    ]) {
       cpSync(join(ROOT, entry), join(dir, entry), { recursive: true });
     }
     mutate(dir);
@@ -207,6 +210,96 @@ const cases = [
     },
     expect: (r) => r.code === 1 && /reverse-domain namespace/.test(r.output),
     describe: "should require reverse-domain extension keys",
+  },
+  {
+    name: "rejects a secret in the Claude oauth block",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.usable.oauth.clientSecret = "not-a-real-secret-value";
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /not a recognised public field/.test(r.output),
+    describe: "should fail closed on unrecognised oauth fields",
+  },
+  {
+    name: "rejects headers in .mcp.json",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.usable.headers = { Authorization: "Bearer someactualtokenvalue" };
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /headers/.test(r.output),
+    describe: "should reject a packaged header in the Claude MCP config",
+  },
+  {
+    name: "rejects the Agent Plugins transport in .mcp.json",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.usable.type = "streamable-http";
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /Claude Code uses "http"/.test(r.output),
+    describe: "should catch the transport identifiers being swapped",
+  },
+  {
+    name: "rejects MCP configs that disagree on url",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.usable.url = "https://staging.usable.dev/api/mcp";
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /points at/.test(r.output),
+    describe: "should catch drift between the two MCP documents",
+  },
+  {
+    name: "rejects MCP configs that disagree on server set",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.extra = { type: "http", url: "https://example.invalid/mcp" };
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /must be offered the same servers/.test(r.output),
+    describe: "should require both clients to get the same servers",
+  },
+  {
+    name: "rejects Claude plugin name mismatch",
+    mutate: (dir) => {
+      const p = JSON.parse(readFileSync(join(dir, ".claude-plugin", "plugin.json"), "utf8"));
+      p.name = "usable-something-else";
+      writeFileSync(join(dir, ".claude-plugin", "plugin.json"), JSON.stringify(p, null, 2));
+    },
+    expect: (r) => r.code === 1 && /does not match root plugin.json name/.test(r.output),
+    describe: "should keep the two plugin manifests in agreement",
+  },
+  {
+    name: "rejects Claude plugin version mismatch",
+    mutate: (dir) => {
+      const p = JSON.parse(readFileSync(join(dir, ".claude-plugin", "plugin.json"), "utf8"));
+      p.version = "9.9.9";
+      writeFileSync(join(dir, ".claude-plugin", "plugin.json"), JSON.stringify(p, null, 2));
+    },
+    expect: (r) => r.code === 1 && /does not match root plugin.json version/.test(r.output),
+    describe: "should catch a version that would ship stale in one client",
+  },
+  {
+    name: "rejects marketplace source with no plugin manifest",
+    mutate: (dir) => {
+      const m = JSON.parse(readFileSync(join(dir, ".claude-plugin", "marketplace.json"), "utf8"));
+      m.plugins[0].source = "./docs";
+      writeFileSync(join(dir, ".claude-plugin", "marketplace.json"), JSON.stringify(m, null, 2));
+    },
+    expect: (r) => r.code === 1 && /has no \.claude-plugin\/plugin\.json/.test(r.output),
+    describe: "should verify the marketplace points at a real plugin",
+  },
+  {
+    name: "rejects marketplace missing owner",
+    mutate: (dir) => {
+      const m = JSON.parse(readFileSync(join(dir, ".claude-plugin", "marketplace.json"), "utf8"));
+      delete m.owner;
+      writeFileSync(join(dir, ".claude-plugin", "marketplace.json"), JSON.stringify(m, null, 2));
+    },
+    expect: (r) => r.code === 1 && /owner\.name/.test(r.output),
+    describe: "should require the owner field Claude Code mandates",
   },
   {
     name: "rejects an undocumented MCP url",
