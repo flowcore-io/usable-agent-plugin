@@ -68,8 +68,10 @@ Plugin skills are namespaced, so expect `usable:usable-knowledge-workflow` and
 ## MCP server
 
 The plugin declares the Usable MCP server in `.mcp.json` with the public OAuth client ID
-`mcp_oauth_client`. Claude Code performs the OAuth flow and stores tokens itself; no credential
-ships in this package.
+`mcp_oauth_client` and an explicit read-only scope list. The explicit list prevents Claude Code
+from requesting every scope advertised by the server, which Keycloak rejects with
+`invalid_scope`. Claude Code performs the OAuth flow and stores tokens itself; no credential ships
+in this package.
 
 **A user-level server named `usable` will shadow it.** If you already have one, the plugin's
 declaration is silently ignored. Plugin-provided servers appear as `plugin:usable:usable` in

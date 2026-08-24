@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - `.claude-plugin/` and `.mcp.json` added to the release-archive allowlist. Without this the
   published artifact would have shipped a package Claude Code could not install.
+- Claude Code OAuth no longer requests every advertised Usable permission. `.mcp.json` now pins
+  the live-supported read-only scopes, preventing Keycloak's `invalid_scope` response.
 
 ### Verified
 - Claude Code 2.1.227 on macOS: `claude plugin marketplace add ./` registers the marketplace

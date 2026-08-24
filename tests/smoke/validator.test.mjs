@@ -222,6 +222,26 @@ const cases = [
     describe: "should fail closed on unrecognised oauth fields",
   },
   {
+    name: "rejects missing Claude OAuth scopes",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      delete mcp.mcpServers.usable.oauth.scopes;
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /oauth\.scopes must be an array/.test(r.output),
+    describe: "should prevent Claude from requesting every advertised server scope",
+  },
+  {
+    name: "rejects unsupported Claude OAuth scopes",
+    mutate: (dir) => {
+      const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
+      mcp.mcpServers.usable.oauth.scopes.push("workspace.delete");
+      writeFileSync(join(dir, ".mcp.json"), JSON.stringify(mcp, null, 2));
+    },
+    expect: (r) => r.code === 1 && /exactly the supported read-only scopes/.test(r.output),
+    describe: "should reject scopes outside the live-supported read-only set",
+  },
+  {
     name: "rejects headers in .mcp.json",
     mutate: (dir) => {
       const mcp = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));

@@ -4,7 +4,15 @@
       "type": "http",
       "url": "https://usable.dev/api/mcp",
       "oauth": {
-        "clientId": "mcp_oauth_client"
+        "clientId": "mcp_oauth_client",
+        "scopes": [
+          "openid",
+          "profile",
+          "email",
+          "offline_access",
+          "fragments.read",
+          "workspace.read"
+        ]
       }
     }
   }

@@ -34,6 +34,14 @@ const CLAUDE_TRANSPORTS = ["stdio", "http", "sse"];
 // An OAuth client_id is a public identifier, not a credential, so it may be
 // packaged. Anything that could carry a secret may not.
 const CLAUDE_OAUTH_PUBLIC_KEYS = new Set(["clientId", "callbackPort", "scopes"]);
+const CLAUDE_REQUIRED_OAUTH_SCOPES = [
+  "openid",
+  "profile",
+  "email",
+  "offline_access",
+  "fragments.read",
+  "workspace.read",
+];
 const ALLOWED_MANIFEST_KEYS = new Set([
   "$schema", "name", "version", "description", "author",
   "homepage", "repository", "license", "keywords", "extensions",
@@ -331,6 +339,13 @@ function validateClaudeMcp() {
         }
         if (server.oauth.clientId !== undefined && typeof server.oauth.clientId !== "string") {
           fail(CHECK, `server "${name}" oauth.clientId must be a string`);
+        }
+        if (!Array.isArray(server.oauth.scopes) ||
+            server.oauth.scopes.some((scope) => typeof scope !== "string" || !scope)) {
+          fail(CHECK, `server "${name}" oauth.scopes must be an array of non-empty strings`);
+        } else if (server.oauth.scopes.length !== CLAUDE_REQUIRED_OAUTH_SCOPES.length ||
+                   CLAUDE_REQUIRED_OAUTH_SCOPES.some((scope) => !server.oauth.scopes.includes(scope))) {
+          fail(CHECK, `server "${name}" oauth.scopes must contain exactly the supported read-only scopes: ${CLAUDE_REQUIRED_OAUTH_SCOPES.join(", ")}`);
         }
       }
     }
