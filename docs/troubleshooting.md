@@ -30,6 +30,11 @@ Then check:
 interactive OAuth 2.1 for MCP; some clients only support static headers, which this plugin
 deliberately does not provide.
 
+**Claude Code shows `invalid_scope` with a long list of scopes.** Upgrade the plugin to a
+version whose `.mcp.json` explicitly declares the read-only OAuth scopes. Then remove the old
+OAuth grant or cached MCP credentials and authenticate again; existing sessions do not gain the
+correct scope set automatically.
+
 **Discovery fails.** Verify the chain by hand:
 
 ```bash

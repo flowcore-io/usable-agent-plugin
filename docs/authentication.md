@@ -77,7 +77,11 @@ codex mcp add usable --url https://usable.dev/api/mcp --oauth-client-id mcp_oaut
 
 An OAuth `client_id` is a public identifier, not a secret — it is safe in a shared config and
 in this repository. This package declares it for Claude Code in `.mcp.json` under
-`oauth.clientId`, which is the field Claude Code reads.
+`oauth.clientId`, which is the field Claude Code reads. It also pins `oauth.scopes` to
+`openid`, `profile`, `email`, `offline_access`, `fragments.read`, and `workspace.read`.
+Without that explicit list Claude Code requests every scope advertised by the authorization
+metadata, including administrative scopes the public client cannot request, and Keycloak rejects
+the authorization request with `invalid_scope`.
 
 A client **secret** is a different thing entirely and must never be packaged. CI enforces the
 distinction: the validator permits only `clientId`, `callbackPort`, and `scopes` inside an
