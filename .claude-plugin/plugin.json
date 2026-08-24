@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "usable",
   "description": "Knowledge-first workflow backed by Usable. Search team knowledge before implementing, retrieve complete sources, separate evidence from assumptions, and verify before claiming success.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Flowcore",
     "email": "support@usable.dev",

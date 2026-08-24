@@ -11,7 +11,7 @@
       "name": "usable",
       "source": "./",
       "description": "Search your team's knowledge before you build. Retrieves complete sources, separates evidence from assumptions, and verifies before claiming success.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Flowcore"
       }

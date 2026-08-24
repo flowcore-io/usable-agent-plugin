@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## 0.2.0 — 2026-08-24
+
 ### Added
 - Claude Code support alongside the Agent Plugins standard: `.claude-plugin/marketplace.json`,
   `.claude-plugin/plugin.json`, and `.mcp.json`. Only `skills/` is shared between the two
@@ -25,7 +27,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   terms URLs, brand colour `#347cbf`, icon and logo paths, and a default prompt.
 - Validation of client-extension file references: paths must be plugin-relative, must stay
   inside the plugin root, and must exist.
-- Twelve further self-tests covering all of the above; the suite is now 27 cases.
+- Fourteen further self-tests covering all of the above; the suite is now 29 cases.
 
 ### Changed
 - `assets/` is now included in the release archive allowlist.
@@ -113,4 +115,6 @@ as fully supported; Codex loads the package and both skills.
   materialises the repository, so `scripts/` and `tests/` are present in the installed copy;
   the client does not execute them.
 
+[Unreleased]: https://github.com/flowcore-io/usable-agent-plugin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/flowcore-io/usable-agent-plugin/releases/tag/v0.2.0
 [0.1.0]: https://github.com/flowcore-io/usable-agent-plugin/releases/tag/v0.1.0

@@ -47,7 +47,7 @@ For clients that accept a plain package directory. Pin a version; do not track `
 anything you rely on.
 
 ```bash
-VERSION=0.1.0
+VERSION=0.2.0
 
 curl -fsSLO "https://github.com/flowcore-io/usable-agent-plugin/releases/download/v${VERSION}/usable-agent-plugin-${VERSION}.tar.gz"
 curl -fsSLO "https://github.com/flowcore-io/usable-agent-plugin/releases/download/v${VERSION}/usable-agent-plugin-${VERSION}.tar.gz.sha256"
@@ -71,7 +71,7 @@ Useful for evaluation and development. Note that a clone contains repository-onl
 ```bash
 git clone https://github.com/flowcore-io/usable-agent-plugin.git
 cd usable-agent-plugin
-git checkout v0.1.0
+git checkout v0.2.0
 node scripts/validate-package.mjs
 ```
 

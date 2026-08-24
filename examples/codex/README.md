@@ -25,7 +25,7 @@ codex plugin add usable@usable
 Pin a released version once tags exist:
 
 ```bash
-codex plugin marketplace add flowcore-io/usable-agent-plugin --ref v0.1.0
+codex plugin marketplace add flowcore-io/usable-agent-plugin --ref v0.2.0
 ```
 
 ## Install from a local clone
