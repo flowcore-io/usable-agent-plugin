@@ -5,7 +5,7 @@ a knowledge-first workflow backed by [Usable](https://usable.dev): search what t
 already decided before implementing, retrieve complete sources, separate evidence from
 assumptions, and verify before claiming success.
 
-> **Status: pre-release (`0.1.0`), not yet released.**
+> **Status: pre-release (`0.2.0`).**
 > Codex is partially verified — the package loads and both skills reach the model. No client
 > has completed all five acceptance steps, so none is listed as fully supported. See
 > [`docs/supported-clients.md`](docs/supported-clients.md).
