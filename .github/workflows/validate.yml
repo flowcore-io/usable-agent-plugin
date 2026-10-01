@@ -44,10 +44,10 @@ jobs:
       - name: Verify reproducible build
         run: |
           node scripts/build-release.mjs > /dev/null
-          FIRST=$(sha256sum dist/*.tar.gz | cut -d' ' -f1)
+          FIRST=$(sha256sum dist/*.tar.gz dist/*.zip)
           rm -rf dist
           node scripts/build-release.mjs > /dev/null
-          SECOND=$(sha256sum dist/*.tar.gz | cut -d' ' -f1)
+          SECOND=$(sha256sum dist/*.tar.gz dist/*.zip)
           if [ "$FIRST" != "$SECOND" ]; then
             echo "Build is not reproducible: $FIRST != $SECOND"
             exit 1

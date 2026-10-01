@@ -20,9 +20,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 /** Runs the validator in `dir`; returns { code, output }. */
-function runValidator(dir) {
+function runValidator(dir, args = []) {
   try {
-    const output = execFileSync("node", [join(dir, "scripts", "validate-package.mjs")], {
+    const output = execFileSync("node", [join(dir, "scripts", "validate-package.mjs"), ...args], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -33,7 +33,7 @@ function runValidator(dir) {
 }
 
 /** Copies the package into a temp dir, applies `mutate`, then validates. */
-function inSandbox(mutate) {
+function inSandbox(mutate, args = []) {
   const dir = mkdtempSync(join(tmpdir(), "uap-test-"));
   try {
     for (const entry of [
@@ -43,13 +43,56 @@ function inSandbox(mutate) {
       cpSync(join(ROOT, entry), join(dir, entry), { recursive: true });
     }
     mutate(dir);
-    return runValidator(dir);
+    return runValidator(dir, args);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
 const cases = [
+  ...[
+    ["overlong submission subtitle", (m) => { m.extensions["com.openai"].interface.shortDescription = "x".repeat(31); }, /shortDescription/],
+    ["missing support URL", (m) => { delete m.extensions["com.openai"].interface.supportURL; }, /supportURL/],
+    ["credential-bearing listing URL", (m) => { m.extensions["com.openai"].interface.supportURL = "https://user:pass@example.invalid/"; }, /embedded credentials/],
+    ["missing listing icon", (m) => { delete m.extensions["com.openai"].interface.logo; }, /logo/],
+    ["too few positive review cases", (m) => { m.extensions["com.openai"].review.test_cases.positive.pop(); }, /exactly 5/],
+    ["missing expected positive tool", (m) => { delete m.extensions["com.openai"].review.test_cases.positive[0].tools_triggered; }, /tools_triggered/],
+    ["packaged reviewer credentials", (m) => { m.extensions["com.openai"].review.test_credentials = {}; }, /secure dashboard/],
+  ].map(([name, mutateManifest, pattern]) => ({
+    name: `rejects ${name}`,
+    mutate: (dir) => {
+      const path = join(dir, "plugin.json");
+      const manifest = JSON.parse(readFileSync(path, "utf8"));
+      mutateManifest(manifest);
+      writeFileSync(path, JSON.stringify(manifest, null, 2));
+    },
+    expect: (r) => r.code === 1 && pattern.test(r.output),
+    describe: `should reject ${name}`,
+  })),
+  {
+    name: "submission gate rejects missing demo recording",
+    args: ["--submission"],
+    mutate: (dir) => {
+      const path = join(dir, "plugin.json");
+      const manifest = JSON.parse(readFileSync(path, "utf8"));
+      delete manifest.extensions["com.openai"].review.demo_recording_url;
+      writeFileSync(path, JSON.stringify(manifest, null, 2));
+    },
+    expect: (r) => r.code === 1 && /demo_recording_url/.test(r.output),
+    describe: "must not call a draft with no walkthrough submission-ready",
+  },
+  {
+    name: "submission gate accepts complete review metadata",
+    args: ["--submission"],
+    mutate: (dir) => {
+      const path = join(dir, "plugin.json");
+      const manifest = JSON.parse(readFileSync(path, "utf8"));
+      manifest.extensions["com.openai"].review.demo_recording_url = "https://example.invalid/review-demo";
+      writeFileSync(path, JSON.stringify(manifest, null, 2));
+    },
+    expect: (r) => r.code === 0,
+    describe: "should accept syntactically complete metadata, without claiming live verification",
+  },
   {
     name: "unmodified package passes",
     mutate: () => {},
@@ -336,7 +379,7 @@ const cases = [
 let failed = 0;
 
 for (const c of cases) {
-  const result = inSandbox(c.mutate);
+  const result = inSandbox(c.mutate, c.args);
   if (c.expect(result)) {
     console.log(`  ok      ${c.name}`);
   } else {
