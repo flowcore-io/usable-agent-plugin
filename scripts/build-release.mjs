@@ -10,7 +10,7 @@
  *   node scripts/build-release.mjs            # build into dist/
  *   node scripts/build-release.mjs --verify   # build, then assert contents match the allowlist
  *
- * No dependencies. Node 20+. Requires `tar` on PATH.
+ * No dependencies. Node 20+. Requires `tar`, `gzip`, `zip`, and `unzip` on PATH.
  */
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync, readdirSync, statSync, utimesSync } from "node:fs";
@@ -148,6 +148,22 @@ const ownerFlags = isBsdTar
 // Explicit sorted entry list; relying on directory traversal order is not stable.
 const entries = staged.sort().map((f) => join(name, f));
 
+// OpenAI uploads require a ZIP with the portable manifest at its root.
+// Strip extra metadata and pin the timezone used for ZIP's DOS timestamps.
+const zipPath = join(DIST, `${name}.zip`);
+execFileSync("zip", ["-X", "-q", zipPath, ...staged], {
+  cwd: stage,
+  env: { ...process.env, TZ: "UTC" },
+});
+const zipEntries = execFileSync("unzip", ["-Z1", zipPath], { encoding: "utf8" })
+  .trim().split("\n").sort();
+if (JSON.stringify(zipEntries) !== JSON.stringify(staged)) {
+  throw new Error("Submission ZIP contents do not match the staged allowlist");
+}
+execFileSync("unzip", ["-tq", zipPath], { stdio: "inherit" });
+const zipDigest = createHash("sha256").update(readFileSync(zipPath)).digest("hex");
+writeFileSync(`${zipPath}.sha256`, `${zipDigest}  ${name}.zip\n`);
+
 const tarPath = join(DIST, `${name}.tar`);
 execFileSync(
   "tar",
@@ -166,3 +182,5 @@ rmSync(stage, { recursive: true, force: true });
 
 console.log(`\nBuilt ${relative(ROOT, tarball)} using ${isBsdTar ? "bsdtar" : "GNU tar"}`);
 console.log(`SHA-256 ${digest}`);
+console.log(`Built ${relative(ROOT, zipPath)} for OpenAI submission`);
+console.log(`SHA-256 ${zipDigest}`);

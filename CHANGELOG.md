@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+- OpenAI submission ZIP alongside the existing tar.gz release, with root-level portable
+  manifests, an allowlisted payload, integrity verification, and SHA-256 checksum.
+- Five positive and three negative review scenarios, release notes, and a submission
+  checklist. Scenarios still require live testing and a real walkthrough recording.
+- OpenAI listing validation and a strict `--submission` review-material check, with
+  regression cases for listing limits, missing fields, and private reviewer metadata.
+
+### Fixed
+- Shortened the directory subtitle to the 30-character limit and added the public support URL.
+- CI now verifies and publishes both archive formats and checks both for reproducibility.
+
 ## 0.2.0 — 2026-08-24
 
 ### Added

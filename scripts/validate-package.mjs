@@ -79,10 +79,13 @@ function collectPluginRelativePaths(node, acc = []) {
 
 /** Recursively walk the repo, skipping VCS and ignored build dirs. */
 function walk(dir, acc = []) {
-  const SKIP = new Set([".git", "node_modules", "dist"]);
+  const SKIP = new Set([".git", "node_modules", "dist", ".claude", ".codex", ".cursor"]);
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP.has(entry.name)) continue;
     const full = join(dir, entry.name);
+    // Managed time tracking is local state, outside the runtime allowlist.
+    // Continue scanning the committed .agents/plugins marketplace descriptor.
+    if (relative(ROOT, full) === join(".agents", "skills")) continue;
     if (entry.isDirectory()) walk(full, acc);
     else acc.push(full);
   }
@@ -161,6 +164,87 @@ function validateManifest() {
 
   if (errors.every((e) => !e.startsWith(CHECK))) pass(`${CHECK} conforms to Agent Plugins 1.0.0`);
   return m;
+}
+
+// OpenAI listing requirements are stricter than the portable package schema.
+// --submission also checks materials that may be entered in the dashboard.
+function validateOpenAiSubmission(manifest) {
+  const CHECK = "openai-submission";
+  const extension = manifest?.extensions?.["com.openai"];
+  if (!extension) {
+    fail(CHECK, "missing extensions.com.openai");
+    return;
+  }
+  const listing = extension.interface;
+  if (!listing || typeof listing !== "object" || Array.isArray(listing)) {
+    fail(CHECK, "interface must be an object");
+    return;
+  }
+  function textField(object, key, max, required = true) {
+    const value = object?.[key];
+    if (value === undefined && !required) return;
+    if (typeof value !== "string" || !value.trim() || [...value].length > max ||
+        /[\x00-\x08\x0b-\x1f\x7f]/.test(value)) {
+      fail(CHECK, `${key} must be non-empty text of at most ${max} characters without unsupported controls`);
+    }
+  }
+  function httpsUrl(value, key) {
+    try {
+      const url = new URL(value);
+      if (typeof value !== "string" || value.length > 1024 ||
+          url.protocol !== "https:" || url.username || url.password) throw new Error();
+    } catch {
+      fail(CHECK, `${key} must be an HTTPS URL without embedded credentials, at most 1024 characters`);
+    }
+  }
+  for (const [key, max] of Object.entries({
+    displayName: 30, shortDescription: 30, longDescription: 4000,
+    developerName: 80, category: 120,
+  })) textField(listing, key, max);
+  if (/[\r\n]/.test(listing.shortDescription ?? "")) fail(CHECK, "shortDescription must be a single line");
+  for (const key of ["websiteURL", "supportURL", "privacyPolicyURL", "termsOfServiceURL"]) {
+    httpsUrl(listing[key], key);
+  }
+  for (const key of ["logo", "composerIcon"]) {
+    if (typeof listing[key] !== "string" || !listing[key].startsWith("./")) {
+      fail(CHECK, `${key} must reference a packaged image with a ./-prefixed path`);
+    }
+  }
+  if (listing.defaultPrompt !== undefined) {
+    const prompts = Array.isArray(listing.defaultPrompt) ? listing.defaultPrompt : [listing.defaultPrompt];
+    if (prompts.length > 3 || new Set(prompts).size !== prompts.length) fail(CHECK, "defaultPrompt must contain at most three unique prompts");
+    for (const prompt of prompts) textField({ prompt }, "prompt", 128);
+  }
+  const review = extension.review;
+  if (review !== undefined && (!review || typeof review !== "object" || Array.isArray(review))) {
+    fail(CHECK, "review must be an object");
+    return;
+  }
+  for (const key of ["test_credentials", "reviewer_instructions"]) {
+    if (review && key in review) fail(CHECK, `${key} belongs in the secure dashboard, never the package`);
+  }
+  const strict = process.argv.includes("--submission");
+  if (review?.test_cases !== undefined || strict) {
+    let servers = {};
+    try { servers = readJson("mcp.json").mcpServers ?? {}; } catch { /* reported by MCP validation */ }
+    if (Object.keys(servers).length !== 1) fail(CHECK, "plugin-level review cases require exactly one MCP server");
+    for (const [kind, count] of [["positive", 5], ["negative", 3]]) {
+      const cases = review?.test_cases?.[kind];
+      if (!Array.isArray(cases) || cases.length !== count) {
+        fail(CHECK, `review.test_cases.${kind} must contain exactly ${count} cases`);
+        continue;
+      }
+      for (const item of cases) {
+        for (const key of ["description", "prompt", "expected_behavior"]) textField(item, key, 4000);
+        if (kind === "positive") textField(item, "tools_triggered", 4000);
+      }
+    }
+  }
+  if (review?.demo_recording_url !== undefined || strict) httpsUrl(review?.demo_recording_url, "review.demo_recording_url");
+  if (strict) textField(extension.publication, "release_notes", 4000);
+  if (errors.every((e) => !e.startsWith(CHECK))) {
+    pass(`OpenAI listing metadata${strict ? " and packaged review materials" : " and declared review cases"} valid`);
+  }
 }
 
 // ── FR-1: skills ─────────────────────────────────────────────────────────────
@@ -594,6 +678,7 @@ function validateConsistency(manifest) {
 console.log(`Validating package at ${ROOT}\n`);
 
 const manifest = validateManifest();
+if (manifest) validateOpenAiSubmission(manifest);
 validateSkills();
 validateMcp();
 validateClaudeMcp();

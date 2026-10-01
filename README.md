@@ -78,15 +78,20 @@ CI rejects it.
 - [Permissions and data flow](docs/permissions-and-data-flow.md) — for security review
 - [Threat model](docs/threat-model.md) — threats, mitigations, residual risk
 - [Troubleshooting](docs/troubleshooting.md) — diagnosis by symptom
+- [OpenAI submission](docs/submission.md) — ZIP upload, review cases, and remaining dashboard gates
 
 ## Validate locally
 
 ```bash
 node scripts/validate-package.mjs
+node tests/smoke/validator.test.mjs
+node scripts/build-release.mjs
 ```
 
 Checks manifest and MCP schema conformance, skill frontmatter and layout, path containment and
-symlink safety, and credential patterns. Requires Node 20+, no dependencies.
+symlink safety, credential patterns, and OpenAI listing limits. The build produces both
+tar.gz and an OpenAI submission ZIP with checksums. Requires Node 20+, `tar`, `gzip`,
+`zip`, and `unzip`; no Node dependencies. See the submission guide before uploading.
 
 ## Trust boundary
 
